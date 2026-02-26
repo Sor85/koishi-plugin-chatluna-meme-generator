@@ -173,11 +173,12 @@ function getDisplayNameFromUser(user: unknown): string | undefined {
   );
 }
 
-async function resolveMentionedAvatarSrc(
+export async function resolveAvatarSrcByUserId(
   session: Session,
   userId: string,
+  preferredGuildId?: string,
 ): Promise<string | undefined> {
-  const guildId = session.guildId;
+  const guildId = preferredGuildId ?? session.guildId;
 
   if (guildId) {
     try {
@@ -194,8 +195,8 @@ async function resolveMentionedAvatarSrc(
     }
 
     try {
-      const user = await session.bot.getUser(userId, guildId);
-      if (user.avatar) return String(user.avatar);
+      const userInGuild = await session.bot.getUser(userId, guildId);
+      if (userInGuild.avatar) return String(userInGuild.avatar);
     } catch (error) {
       session.bot.logger?.debug?.(
         "getUser(guild) failed for %s/%s: %s",
@@ -220,11 +221,42 @@ async function resolveMentionedAvatarSrc(
   return undefined;
 }
 
-async function resolveMentionedDisplayName(
+export async function resolveAvatarImageByUserId(
+  ctx: Context,
   session: Session,
   userId: string,
+  timeoutMs: number,
+  preferredGuildId?: string,
+  filenamePrefix = "resolved-avatar",
+): Promise<GenerateImageInput | undefined> {
+  let src: string | undefined;
+  try {
+    src = await resolveAvatarSrcByUserId(session, userId, preferredGuildId);
+  } catch (error) {
+    ctx
+      .logger("chatluna-meme-generator")
+      .warn("按用户ID获取头像失败：%s", String(error));
+    return undefined;
+  }
+
+  if (!src) return undefined;
+
+  try {
+    return await downloadImage(ctx, src, timeoutMs, filenamePrefix);
+  } catch (error) {
+    ctx
+      .logger("chatluna-meme-generator")
+      .warn("按用户ID下载头像失败：%s", String(error));
+    return undefined;
+  }
+}
+
+export async function resolveDisplayNameByUserId(
+  session: Session,
+  userId: string,
+  preferredGuildId?: string,
 ): Promise<string | undefined> {
-  const guildId = session.guildId;
+  const guildId = preferredGuildId ?? session.guildId;
 
   if (guildId) {
     try {
@@ -279,7 +311,7 @@ export async function getMentionedTargetAvatarImage(
 
   let src: string | undefined;
   try {
-    src = await resolveMentionedAvatarSrc(session, targetUser.userId);
+    src = await resolveAvatarSrcByUserId(session, targetUser.userId);
   } catch (error) {
     ctx
       .logger("chatluna-meme-generator")
@@ -309,7 +341,7 @@ export async function getMentionedSecondaryAvatarImage(
 
   let src: string | undefined;
   try {
-    src = await resolveMentionedAvatarSrc(session, targetUsers[1].userId);
+    src = await resolveAvatarSrcByUserId(session, targetUsers[1].userId);
   } catch (error) {
     ctx
       .logger("chatluna-meme-generator")
@@ -341,7 +373,7 @@ export async function getMentionedTargetDisplayName(
   if (!targetUser) return undefined;
   if (targetUser.displayName) return targetUser.displayName;
 
-  return await resolveMentionedDisplayName(session, targetUser.userId);
+  return await resolveDisplayNameByUserId(session, targetUser.userId);
 }
 
 export async function getBotAvatarSrc(

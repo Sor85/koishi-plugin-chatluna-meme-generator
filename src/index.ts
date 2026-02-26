@@ -15,7 +15,7 @@ export const name = "koishi-plugin-chatluna-meme-generator";
 
 export const inject = {
   required: ["http"],
-  optional: ["notifier"],
+  optional: ["notifier", "puppeteer"],
 };
 
 export const Config = ConfigSchema;

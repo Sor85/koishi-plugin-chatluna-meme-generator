@@ -1,6 +1,6 @@
 /**
  * 插件配置模型与默认值
- * 定义后端地址、超时与自动补全开关
+ * 按功能分组定义控制台配置项
  */
 
 import { Schema } from "koishi";
@@ -28,10 +28,16 @@ export interface Config {
   enableRandomDedupeWithinHours: boolean;
   randomDedupeWindowHours: number;
   enableRandomKeywordNotice: boolean;
+  enablePokeTriggerRandom: boolean;
+  pokeTriggerCooldownSeconds: number;
   enableInfoFetchConcurrencyLimit: boolean;
   infoFetchConcurrency: number;
   initLoadRetryTimes: number;
   disableErrorReplyToPlatform: boolean;
+  excludeTextOnlyMemes: boolean;
+  excludeImageOnlyMemes: boolean;
+  excludeImageAndTextMemes: boolean;
+  excludedMemeKeys: string[];
 }
 
 export const defaultConfig: Config = {
@@ -59,22 +65,31 @@ export const defaultConfig: Config = {
   enableRandomDedupeWithinHours: false,
   randomDedupeWindowHours: 24,
   enableRandomKeywordNotice: false,
+  enablePokeTriggerRandom: false,
+  pokeTriggerCooldownSeconds: 0,
   enableInfoFetchConcurrencyLimit: false,
   infoFetchConcurrency: 10,
   initLoadRetryTimes: 3,
   disableErrorReplyToPlatform: false,
+  excludeTextOnlyMemes: false,
+  excludeImageOnlyMemes: false,
+  excludeImageAndTextMemes: false,
+  excludedMemeKeys: [],
 };
 
-export const ConfigSchema: Schema<Config> = Schema.object({
+const basicSchema = Schema.object({
   baseUrl: Schema.string()
     .role("link")
     .default(defaultConfig.baseUrl)
-    .description("meme-generator-main 后端地址"),
+    .description("后端服务地址"),
   timeoutMs: Schema.number()
     .min(1000)
     .max(60000)
     .default(defaultConfig.timeoutMs)
-    .description("HTTP 请求超时时间（毫秒）"),
+    .description("请求超时时间（毫秒）"),
+}).description("基础设置");
+
+const textSchema = Schema.object({
   emptyTextAutoFillRules: Schema.array(
     Schema.object({
       source: Schema.union([
@@ -87,46 +102,39 @@ export const ConfigSchema: Schema<Config> = Schema.object({
         .max(1000)
         .step(1)
         .default(100)
-        .description("权重（仅双开时参与随机分配）"),
+        .description("权重（双开来源时用于随机分配）"),
     }),
   )
     .role("table")
     .default(defaultConfig.emptyTextAutoFillRules)
-    .description(
-      "用户未提供文字时的自动补全文案来源（两个来源都开启时按权重随机分配）",
-    ),
+    .description("未提供文本时的自动补全文案来源"),
   autoFillDefaultTextsWhenEmpty: Schema.boolean()
     .default(true)
-    .description("兼容旧配置：用户未提供文字时是否自动使用模板默认文字")
+    .description("兼容旧配置：未提供文本时是否自动使用模板默认文字")
     .hidden(),
+  autoUseGroupNicknameWhenNoDefaultText: Schema.boolean()
+    .default(defaultConfig.autoUseGroupNicknameWhenNoDefaultText)
+    .description("模板无默认文字时是否优先使用群昵称补文案"),
+}).description("文本补全设置");
+
+const imageSchema = Schema.object({
   autoUseAvatarWhenMinImagesOneAndNoImage: Schema.boolean()
     .default(defaultConfig.autoUseAvatarWhenMinImagesOneAndNoImage)
-    .description("最少需求图片数为 1 且无图时是否自动补发送者头像"),
+    .description("最少需 1 图且无图时自动补发送者头像"),
   autoFillOneMissingImageWithAvatar: Schema.boolean()
     .default(defaultConfig.autoFillOneMissingImageWithAvatar)
-    .description(
-      "用户已提供图片且仅差 1 张图达到最少需求时是否自动补发送者头像",
-    ),
+    .description("已提供图片且仅差 1 图时自动补发送者头像"),
   autoFillSenderAndBotAvatarsWhenMinImagesTwoAndNoImage: Schema.boolean()
     .default(
       defaultConfig.autoFillSenderAndBotAvatarsWhenMinImagesTwoAndNoImage,
     )
-    .description("最少需求图片数为 2 且无图时是否自动补发送者与 bot 头像"),
-  autoUseGroupNicknameWhenNoDefaultText: Schema.boolean()
-    .default(defaultConfig.autoUseGroupNicknameWhenNoDefaultText)
-    .description("无默认文字且用户未提供文本时是否优先使用群昵称补文案"),
-  renderMemeListAsImage: Schema.boolean()
-    .default(defaultConfig.renderMemeListAsImage)
-    .description("meme.list 是否渲染为图片输出"),
-  enableDirectAliasWithoutPrefix: Schema.boolean()
-    .default(defaultConfig.enableDirectAliasWithoutPrefix)
-    .description("是否允许使用中文别名跳过指令前缀直接触发"),
-  allowMentionPrefixDirectAliasTrigger: Schema.boolean()
-    .default(defaultConfig.allowMentionPrefixDirectAliasTrigger)
-    .description("开启后允许贴合参数（如 看看你的@user1@user2）"),
+    .description("最少需 2 图且无图时自动补发送者与 bot 头像"),
+}).description("图片补全设置");
+
+const randomSchema = Schema.object({
   enableRandomDedupeWithinHours: Schema.boolean()
     .default(defaultConfig.enableRandomDedupeWithinHours)
-    .description("是否开启 meme.random 在时间窗口内随机去重"),
+    .description("是否开启 meme.random 时间窗口去重"),
   randomDedupeWindowHours: Schema.number()
     .min(1)
     .max(720)
@@ -135,7 +143,44 @@ export const ConfigSchema: Schema<Config> = Schema.object({
     .description("meme.random 去重时间窗口（小时）"),
   enableRandomKeywordNotice: Schema.boolean()
     .default(defaultConfig.enableRandomKeywordNotice)
-    .description("meme.random 是否同时发出模板关键词提示"),
+    .description("meme.random 是否附带模板关键词提示"),
+  enablePokeTriggerRandom: Schema.boolean()
+    .default(defaultConfig.enablePokeTriggerRandom)
+    .description("是否启用戳一戳触发 meme.random"),
+  pokeTriggerCooldownSeconds: Schema.number()
+    .min(0)
+    .max(86400)
+    .step(1)
+    .default(defaultConfig.pokeTriggerCooldownSeconds)
+    .description("戳一戳触发冷却（秒），0 为禁用"),
+}).description("随机触发设置");
+
+const triggerSchema = Schema.object({
+  enableDirectAliasWithoutPrefix: Schema.boolean()
+    .default(defaultConfig.enableDirectAliasWithoutPrefix)
+    .description("是否允许中文别名跳过指令前缀直接触发"),
+  allowMentionPrefixDirectAliasTrigger: Schema.boolean()
+    .default(defaultConfig.allowMentionPrefixDirectAliasTrigger)
+    .description("是否允许贴合参数触发（如 看看你的xxxx@user1@user2）"),
+}).description("触发方式设置");
+
+const filterSchema = Schema.object({
+  excludeTextOnlyMemes: Schema.boolean()
+    .default(defaultConfig.excludeTextOnlyMemes)
+    .description("是否排除仅需文字的模板"),
+  excludeImageOnlyMemes: Schema.boolean()
+    .default(defaultConfig.excludeImageOnlyMemes)
+    .description("是否排除仅需图片的模板"),
+  excludeImageAndTextMemes: Schema.boolean()
+    .default(defaultConfig.excludeImageAndTextMemes)
+    .description("是否排除需图片+文字的模板"),
+  excludedMemeKeys: Schema.array(Schema.string().min(1))
+    .role("table")
+    .default(defaultConfig.excludedMemeKeys)
+    .description("排除模板 key 列表"),
+}).description("模板筛选设置");
+
+const runtimeSchema = Schema.object({
   enableInfoFetchConcurrencyLimit: Schema.boolean()
     .default(defaultConfig.enableInfoFetchConcurrencyLimit)
     .description("是否开启模板信息拉取并发限制"),
@@ -144,14 +189,27 @@ export const ConfigSchema: Schema<Config> = Schema.object({
     .max(100)
     .step(1)
     .default(defaultConfig.infoFetchConcurrency)
-    .description("模板信息拉取并发上限（开启并发限制后生效）"),
+    .description("模板信息拉取并发上限"),
   initLoadRetryTimes: Schema.number()
     .min(0)
     .max(20)
     .step(1)
     .default(defaultConfig.initLoadRetryTimes)
-    .description("插件初始化载入表情失败后的自动重试次数"),
+    .description("初始化载入模板失败后的自动重试次数"),
   disableErrorReplyToPlatform: Schema.boolean()
     .default(defaultConfig.disableErrorReplyToPlatform)
-    .description("开启后不向平台回复错误提示，仅写入日志"),
-});
+    .description("是否关闭平台错误回复（仅写日志）"),
+  renderMemeListAsImage: Schema.boolean()
+    .default(defaultConfig.renderMemeListAsImage)
+    .description("meme.list 是否以图片形式输出"),
+}).description("其他设置");
+
+export const ConfigSchema: Schema<Config> = Schema.intersect([
+  basicSchema,
+  textSchema,
+  imageSchema,
+  randomSchema,
+  triggerSchema,
+  filterSchema,
+  runtimeSchema,
+]);
