@@ -205,11 +205,14 @@ export function applyAutoFillPolicy(input: AutoFillInput): AutoFillResult {
   if (
     input.config.autoUseAvatarWhenMinImagesOneAndNoImage &&
     minImages === 1 &&
-    userImageCount === 0 &&
-    input.senderAvatarImage
+    userImageCount === 0
   ) {
-    images.push(input.senderAvatarImage);
-    return { texts, images, selectedTextSource };
+    const singleImageAvatar =
+      input.targetAvatarImage || input.senderAvatarImage;
+    if (singleImageAvatar) {
+      images.push(singleImageAvatar);
+      return { texts, images, selectedTextSource };
+    }
   }
 
   if (

@@ -532,8 +532,9 @@ describe("applyAutoFillPolicy", () => {
     expect(result.selectedTextSource).toBe("template-default");
   });
 
-  it("min_images=1 且无图时可用头像补图", () => {
-    const avatar = makeImage("avatar");
+  it("min_images=1 且无图且存在被@头像时优先使用被@头像", () => {
+    const senderAvatar = makeImage("sender-avatar");
+    const targetAvatar = makeImage("target-avatar");
 
     const result = applyAutoFillPolicy({
       texts: ["a"],
@@ -543,11 +544,12 @@ describe("applyAutoFillPolicy", () => {
         ...baseConfig,
         autoUseAvatarWhenMinImagesOneAndNoImage: true,
       },
-      senderAvatarImage: avatar,
+      senderAvatarImage: senderAvatar,
+      targetAvatarImage: targetAvatar,
     });
 
     expect(result.images).toHaveLength(1);
-    expect(result.images[0]).toBe(avatar);
+    expect(result.images[0]).toBe(targetAvatar);
   });
 
   it("已有图片且仅差 1 张时可用头像补齐", () => {

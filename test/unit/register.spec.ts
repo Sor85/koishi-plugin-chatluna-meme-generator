@@ -1346,7 +1346,7 @@ describe("registerCommands", () => {
     expect(session.send).not.toHaveBeenCalled();
   });
 
-  it("meme.random 开启关键词提示时应与图片同条返回中文别名+参数", async () => {
+  it("meme.random 开启关键词提示时应与图片同条返回 key 与中文别名", async () => {
     const commandActions = new Map<
       string,
       (...args: any[]) => Promise<unknown>
@@ -1361,7 +1361,7 @@ describe("registerCommands", () => {
 
     getKeysMock.mockResolvedValue(["same"]);
     getInfoMock.mockResolvedValue({
-      key: "same",
+      key: "can_can_need",
       params_type: {
         min_images: 0,
         max_images: 0,
@@ -1399,14 +1399,15 @@ describe("registerCommands", () => {
     );
 
     expect(typeof result).toBe("string");
-    expect(String(result)).toContain("看看你的");
+    expect(String(result)).toContain("key：same");
+    expect(String(result)).toContain("别名：看看你的");
     expect(String(result)).toContain("<img");
     expect(String(result)).not.toContain("meme 关键词：");
     expect(String(result)).not.toContain("触发方式：");
     expect(session.send).not.toHaveBeenCalled();
   });
 
-  it("meme.random 开启关键词提示时无中文别名应回退为 meme key 参数", async () => {
+  it("meme.random 开启关键词提示时无中文别名应显示占位文案", async () => {
     const commandActions = new Map<
       string,
       (...args: any[]) => Promise<unknown>
@@ -1451,7 +1452,8 @@ describe("registerCommands", () => {
     const result = await randomAction!({ session });
 
     expect(typeof result).toBe("string");
-    expect(String(result)).toContain("meme same");
+    expect(String(result)).toContain("key：same");
+    expect(String(result)).toContain("别名：（无中文别名）");
     expect(String(result)).toContain("<img");
     expect(session.send).not.toHaveBeenCalled();
   });

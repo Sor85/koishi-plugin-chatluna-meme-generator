@@ -74,69 +74,7 @@
     │   ├── guide/
     │   ├── index.md
     │   └── public/
-    ├── koishi-dev/
-    │   ├── package.json
-    │   └── koishi.config.json
-    └── koishi-docs/
-        ├── about/
-        ├── api/
-        ├── cookbook/
-        ├── guide/
-        ├── index.md
-        ├── manual/
-        ├── market/
-        ├── plugins/
-        ├── releases/
-        └── schema/
+    └── koishi-dev/
+        ├── package.json
+        └── koishi.config.json
 ```
-
-[标准 Koishi 开发环境创建流程]
-目标：在任意项目中搭建一个可调试、可视化、可持久化的 Koishi 本地开发环境，作为可重复复用的标准模板。
-
-1) 创建开发目录
-- 目录：`koishi-dev/`
-- 用途：作为独立 Koishi 运行环境，避免污染主工程依赖。
-- 初始化：在该目录执行 `npm init -y` 并写入 `"type": "module"`。
-
-2) 安装基础依赖
-- 核心：`koishi`
-- 服务与网络：`@koishijs/plugin-server`、`@koishijs/plugin-http`
-- 可视化与调试：`@koishijs/plugin-console`、`@koishijs/plugin-sandbox`、`@koishijs/plugin-inspect`
-- 命令能力：`@koishijs/plugin-commands`、`@koishijs/plugin-help`
-- 配置与日志：`@koishijs/plugin-config`、`@koishijs/plugin-logger`
-- 状态与本地化：`@koishijs/plugin-status`、`@koishijs/plugin-locales`
-- 数据库：`@koishijs/plugin-database-sqlite`
-
-3) 业务插件接入（通用）
-- 本地插件：在 `koishi-dev/` 内执行 `npm i <本地插件目录>`
-- 远程插件：在 `koishi-dev/` 内执行 `npm i <插件包名>`
-- 规则：业务插件配置独立放在 `koishi.config.json`，不要与基础设施插件混写逻辑。
-
-4) 标准配置文件
-- 使用 JSON 配置：`koishi-dev/koishi.config.json`
-- 服务监听：开发环境 `0.0.0.0`（仅用于本地/内网调试）
-- 生产环境应改为 `127.0.0.1` 或放在反向代理后并开启访问控制
-- 建议插件顺序：
-  - `server`
-  - `http`
-  - `database-sqlite`
-  - `console`
-  - `sandbox`
-  - `config`
-  - `logger`
-  - `status`
-  - `commands`
-  - `help`
-  - `inspect`
-  - `locales`
-  - `<业务插件>`
-
-5) 启动方式（推荐）
-- 在 `koishi-dev/` 目录内启动，避免 loader 读取错误目录：
-  - `npx koishi start koishi.config.json`
-
-6) 验证标准
-- 控制台可访问：`http://127.0.0.1:<port>`（端口以 `koishi.config.json` 的 `server.port` 为准）
-- 启动日志包含：`server/http/console/sandbox/config/logger/database-sqlite/status/commands/help/inspect/locales/<业务插件>`
-- 数据库自动建表成功（sqlite）
-- 可在 sandbox 中执行至少 3 条业务命令，并验证输出符合预期

@@ -464,10 +464,12 @@ export function installRandomAndPokeRuntime(
           );
 
           if (config.enableRandomKeywordNotice) {
-            const randomTriggerText = randomCandidate.directAlias
-              ? randomCandidate.directAlias
-              : `meme ${randomCandidate.key}`;
-            return `${randomTriggerText}\n${stringifyImageSegment(result)}`;
+            const aliasText = randomCandidate.directAlias || "（无中文别名）";
+            return [
+              `key：${randomCandidate.key}`,
+              `别名：${aliasText}`,
+              stringifyImageSegment(result),
+            ].join("\n");
           }
 
           return result;
