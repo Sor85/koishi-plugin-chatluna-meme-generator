@@ -17,7 +17,6 @@ export interface Config {
   baseUrl: string;
   timeoutMs: number;
   emptyTextAutoFillRules: EmptyTextAutoFillRule[];
-  autoFillDefaultTextsWhenEmpty?: boolean;
   autoUseAvatarWhenMinImagesOneAndNoImage: boolean;
   autoFillOneMissingImageWithAvatar: boolean;
   autoFillSenderAndBotAvatarsWhenMinImagesTwoAndNoImage: boolean;
@@ -117,19 +116,9 @@ const textSchema = Schema.object({
     .role("table")
     .default(defaultConfig.emptyTextAutoFillRules)
     .description("未提供文本时的自动补全文案来源"),
-  autoFillDefaultTextsWhenEmpty: Schema.boolean()
-    .default(true)
-    .description("兼容旧配置：未提供文本时是否自动使用模板默认文字")
-    .hidden(),
   autoUseGroupNicknameWhenNoDefaultText: Schema.boolean()
     .default(defaultConfig.autoUseGroupNicknameWhenNoDefaultText)
     .description("模板无默认文字时是否优先使用群昵称补文案"),
-  enableQuotedImageTrigger: Schema.boolean()
-    .default(defaultConfig.enableQuotedImageTrigger)
-    .description("是否允许引用消息中的图片参与触发"),
-  enableQuotedTextTrigger: Schema.boolean()
-    .default(defaultConfig.enableQuotedTextTrigger)
-    .description("是否在未提供文本参数时使用引用消息文字触发"),
 }).description("文本补全设置");
 
 const imageSchema = Schema.object({
@@ -171,6 +160,12 @@ const triggerSchema = Schema.object({
   allowLeadingAtBeforeCommand: Schema.boolean()
     .default(defaultConfig.allowLeadingAtBeforeCommand)
     .description("是否允许前置@参数触发（如 @用户 meme）"),
+  enableQuotedImageTrigger: Schema.boolean()
+    .default(defaultConfig.enableQuotedImageTrigger)
+    .description("是否允许引用消息中的图片参与触发"),
+  enableQuotedTextTrigger: Schema.boolean()
+    .default(defaultConfig.enableQuotedTextTrigger)
+    .description("是否在未提供文本参数时使用引用消息文字触发"),
   enableMemeXmlTool: Schema.boolean()
     .default(defaultConfig.enableMemeXmlTool)
     .description("是否启用 XML 形式的 meme 工具调用"),

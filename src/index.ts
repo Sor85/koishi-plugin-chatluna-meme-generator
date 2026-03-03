@@ -26,22 +26,6 @@ export function apply(ctx: Context, config: PluginConfig): void {
     ...config,
   };
 
-  if (config.autoFillDefaultTextsWhenEmpty === false) {
-    mergedConfig.emptyTextAutoFillRules = [
-      {
-        source: "template-default",
-        enabled: false,
-        weight: 100,
-      },
-      {
-        source: "user-nickname",
-        enabled: false,
-        weight: 100,
-      },
-    ];
-    mergedConfig.autoUseGroupNicknameWhenNoDefaultText = false;
-  }
-
   registerCommands(ctx, mergedConfig);
 }
 export const usage = `

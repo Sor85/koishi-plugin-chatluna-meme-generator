@@ -66,14 +66,11 @@
     │       ├── guide/
     │       ├── index.md
     │       └── zh-CN/
-    ├── chatluna-doc/
-    │   ├── about/
-    │   ├── development/
-    │   ├── ecosystem/
-    │   ├── guide/
-    │   ├── index.md
-    │   └── public/
-    └── koishi-dev/
-        ├── package.json
-        └── koishi.config.json
+    └── chatluna-doc/
+        ├── about/
+        ├── development/
+        ├── ecosystem/
+        ├── guide/
+        ├── index.md
+        └── public/
 ```

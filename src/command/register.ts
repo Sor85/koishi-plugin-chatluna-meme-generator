@@ -280,15 +280,10 @@ export function registerCommands(ctx: Context, config: Config): void {
     if (!config.allowLeadingAtBeforeCommand) {
       if (config.enableDeveloperDebugLog) {
         logger.info(
-          "leading-at debug: blocked by allowLeadingAtBeforeCommand=false",
+          "leading-at debug: pass-through because allowLeadingAtBeforeCommand=false",
         );
       }
-      const message = handleErrorReply(
-        "meme.generate",
-        "不支持前置@参数，请使用 meme @用户 的格式。",
-      );
-      if (message) await session.send(message);
-      return;
+      return await next();
     }
 
     const normalizedCommandText = leadingAtParts.commandText.trim();

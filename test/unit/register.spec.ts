@@ -705,7 +705,7 @@ describe("registerCommands", () => {
     );
   });
 
-  it("关闭前置@允许时 @用户 meme 应拦截并返回提示", async () => {
+  it("关闭前置@允许时 @用户 meme 应放行给下游", async () => {
     const { ctx, middlewareHandlers } = createMockContext();
 
     registerCommands(
@@ -723,18 +723,16 @@ describe("registerCommands", () => {
       [],
       { atSelf: false },
     );
-    const next = vi.fn(async () => undefined);
+    const next = vi.fn(async () => "next-ok");
 
     await middleware(session, next);
 
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
     expect(session.execute).not.toHaveBeenCalled();
-    expect(session.send).toHaveBeenCalledWith(
-      "不支持前置@参数，请使用 meme @用户 的格式。",
-    );
+    expect(session.send).not.toHaveBeenCalled();
   });
 
-  it("关闭前置@允许时 @bot meme 应拦截并返回提示", async () => {
+  it("关闭前置@允许时 @bot meme 应放行给下游", async () => {
     const { ctx, middlewareHandlers } = createMockContext();
 
     registerCommands(
@@ -752,15 +750,13 @@ describe("registerCommands", () => {
       [],
       { atSelf: true },
     );
-    const next = vi.fn(async () => undefined);
+    const next = vi.fn(async () => "next-ok");
 
     await middleware(session, next);
 
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
     expect(session.execute).not.toHaveBeenCalled();
-    expect(session.send).toHaveBeenCalledWith(
-      "不支持前置@参数，请使用 meme @用户 的格式。",
-    );
+    expect(session.send).not.toHaveBeenCalled();
   });
 
   it("开启前置@允许时中间件应改写并执行指令", async () => {
@@ -835,7 +831,7 @@ describe("registerCommands", () => {
     expect(session.send).toHaveBeenCalledWith("ok");
   });
 
-  it("关闭前置@允许时 stripped 无前置@但 content 有前置@仍应拦截", async () => {
+  it("关闭前置@允许时 stripped 无前置@但 content 有前置@仍应放行", async () => {
     const { ctx, middlewareHandlers } = createMockContext();
 
     registerCommands(
@@ -854,15 +850,13 @@ describe("registerCommands", () => {
       { atSelf: false },
       '<at id="10001"/> meme can_can_need',
     );
-    const next = vi.fn(async () => undefined);
+    const next = vi.fn(async () => "next-ok");
 
     await middleware(session, next);
 
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
     expect(session.execute).not.toHaveBeenCalled();
-    expect(session.send).toHaveBeenCalledWith(
-      "不支持前置@参数，请使用 meme @用户 的格式。",
-    );
+    expect(session.send).not.toHaveBeenCalled();
   });
 
   it("开启前置@允许时 @bot 非meme消息应放行给下游", async () => {

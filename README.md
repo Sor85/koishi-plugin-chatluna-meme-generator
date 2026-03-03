@@ -48,6 +48,12 @@ meme.random
 
 ## 更新日志
 
+### 0.0.9
+
+- 调整控制台配置分组：将 `enableQuotedImageTrigger` 与 `enableQuotedTextTrigger` 统一移动到“触发方式设置”。
+- 同步清理“文本补全设置/图片补全设置”中的引用触发开关项，避免配置分组重复与歧义。
+- 移除旧版兼容配置 `autoFillDefaultTextsWhenEmpty` 及对应运行时分支，配置语义与当前规则保持一致。
+
 ### 0.0.8
 
 - 修复 `allowLeadingAtBeforeCommand` 与前置@触发逻辑：开启时支持 `@用户 别名` 与 `@用户 meme`，并正确改写到 meme 指令链路。
